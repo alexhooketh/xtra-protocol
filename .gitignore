@@ -1,5 +1,7 @@
 bin
 node_modules
+artifacts-zk
+cache-zk
 .vscode
 .DS_Store
 ._.DS_Store
