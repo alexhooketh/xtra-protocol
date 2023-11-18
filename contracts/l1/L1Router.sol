@@ -4,12 +4,12 @@ pragma solidity ^0.8.19;
 import "./interfaces/IL2Gateway.sol";
 
 contract L1Router {
-    address public owner;
+    address private owner;
+    mapping(uint32 => IL2Gateway) private gateways;
 
-    mapping(uint256 => IL2Gateway) public gatewaysMap;
-    mapping(uint256 => bytes32[]) public hashesMailbox;
-    uint256[] public chainIds;
-
+    constructor() {
+        owner = msg.sender;
+    }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "ngmi");
@@ -20,38 +20,12 @@ contract L1Router {
         owner = newOwner;
     }
 
-    function receiveAll() public {
-        for (uint256 i = 0; i < chainIds.length; i++) {
-            receiveFrom(chainIds[i]);
-        }
+    function setGateway(uint32 chainId, IL2Gateway gateway) external onlyOwner {
+        gateways[chainId] = gateway;
     }
 
-    function receiveFrom(uint256 chainId) internal {
-        IL2Gateway gateway = gatewaysMap[chainId];
-        bytes32[] memory hashes = gateway.receiveHashes();
-
-        for (uint256 j = 0; j < hashes.length; j++) {
-            bytes32 _hash = hashes[j];
-            uint256 destinationChain = uint256(_hash) >> 224;
-            hashesMailbox[destinationChain].push(_hash);
-        }
+    function forwardBatch(uint32 fromChainId, uint32 toChainId, bytes calldata retrievalData) external {
+        uint256 batchHash = gateways[fromChainId].receiveHash(retrievalData);
+        gateways[toChainId].sendHash(batchHash);
     }
-
-    function sendAll() public {
-        for (uint256 i = 0; i < chainIds.length; i++) {
-            sendFrom(chainIds[i]);
-        }
-    }
-
-    function sendFrom(uint256 chainId) internal {
-        bytes32[] memory hashes = hashesMailbox[chainId];
-        delete hashesMailbox[chainId];
-        bytes32 aggrHash = keccak256(abi.encode(hashes));
-        gatewaysMap[chainId].sendHash(aggrHash);
-    }
-
-    function executeAll() external {
-        
-    }
-
 }

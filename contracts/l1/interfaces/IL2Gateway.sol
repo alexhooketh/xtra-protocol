@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 interface IL2Gateway {
 
-    function receiveHashes() external returns (bytes32[] memory);
-    function sendHash(bytes32 aggrHash) external;
+    function receiveHash(bytes memory retrievalData) external returns (uint256);
+    function sendHash(uint256 batchHash) external;
     
 }
