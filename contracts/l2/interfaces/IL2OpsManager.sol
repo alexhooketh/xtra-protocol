@@ -21,7 +21,7 @@ function deserializeChainedHash(uint256 serialized) pure returns (ChainedHash me
 interface IL2OpsManager {
     // Chained hashes of userop requests.
     // Key is destination chain, value is chained hash of user operation
-    function opRequests(uint32) external returns (ChainedHash[] memory);
+    // function opRequests(uint32) external returns (ChainedHash[] memory);
 
     // Arrived userop hashes.
     // They're used for MiniAccount "signature" validations
@@ -30,7 +30,7 @@ interface IL2OpsManager {
     // Arrived hashes of userop batches.
     // All hashes are removed when their original value is revealed
     // by revealBatch()
-    function unrevealedBatches(uint256) external returns (bool);
+    // function unrevealedBatches(uint256) external returns (bool);
 
     // In order to save L1 calldata, userop requests are divided into
     // groups based on destination chain and hashed into chained hash.
@@ -44,13 +44,13 @@ interface IL2OpsManager {
     // reward pool so their batch becomes profitable to send
     function totalBid(uint32) external returns (uint256);
 
-    // Calculates how much gas will be spent when sending the message to L1.
+    // Calculates how much ETH will be spent when sending the hash to L1.
     // This function is needed for calculating minimum requestOp() bid.
     //
     // It's recommended that implementers of L2OpsManager on custom L2
     // add some additional fee to this function to prevent batch halt on
-    // gas spikes. In the base implementation, 10% additional fee is used
-    function calculateSendGas(uint256 batchLength) external returns (uint256);
+    // gas spikes and incentivize operators on L1 to forward the batch.
+    function calculateSendFee() external returns (uint256);
     // Stores userop hash in the contract's storage until some operator
     // uses it to build the batch and send it to L1 router.
     //
@@ -74,5 +74,5 @@ interface IL2OpsManager {
     // and if it's not, revert
     function receiveBatchHash(uint256 batchHash) external;
     // Hashes all 
-    function revealBatch(uint256[] calldata batch) external;
+    // function revealBatch(uint256[] calldata batch) external;
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./interfaces/IL2OpsManager.sol";
+import "@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol";
 
 abstract contract BaseL2OpsManager is IL2OpsManager {
     mapping(uint32 => ChainedHash[]) public opRequests;
@@ -10,26 +11,17 @@ abstract contract BaseL2OpsManager is IL2OpsManager {
     mapping(uint256 => bool) public userOpHashes;
     mapping(uint256 => bool) public unrevealedBatches;
 
-    address private immutable l1Router;
-    address private immutable l2Gateway;
-
-    constructor(address _l1Router, address _l2Gateway) {
-        l1Router = _l1Router;
-        l2Gateway = _l2Gateway;
-    }
-
     modifier onlyFromL1Router {
         _onlyFromL1Router();
         _;
     }
 
-    function calculateSendGas(uint256 batchLength) public pure virtual returns (uint256);
+    function calculateSendFee() public virtual returns (uint256);
 
     function requestOp(ChainedHash calldata opHash) external payable {
 
-        uint256 sendGas = calculateSendGas(opRequests[opHash.destinationChainId].length);
-        uint256 totalSendFee = sendGas * block.basefee;
-        require(totalBid[opHash.destinationChainId] + msg.value >= totalSendFee, "gas bid too low");
+        uint256 sendFee = calculateSendFee();
+        require(totalBid[opHash.destinationChainId] + msg.value >= sendFee, "gas bid too low");
         
         opRequests[opHash.destinationChainId].push(opHash);
         totalBid[opHash.destinationChainId] += msg.value;
