@@ -23,6 +23,15 @@ interface IL2OpsManager {
     // Key is destination chain, value is chained hash of user operation
     function opRequests(uint32) external returns (ChainedHash[] memory);
 
+    // Arrived userop hashes.
+    // They're used for MiniAccount "signature" validations
+    function userOpHashes(uint256) external returns (bool);
+
+    // Arrived hashes of userop batches.
+    // All hashes are removed when their original value is revealed
+    // by revealBatch()
+    function unrevealedBatches(uint256) external returns (bool);
+
     // In order to save L1 calldata, userop requests are divided into
     // groups based on destination chain and hashed into chained hash.
     // This chained hash will be sent right to the destination L2,
