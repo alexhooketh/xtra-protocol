@@ -24,9 +24,9 @@ contract L1Router {
         gateways[chainId] = gateway;
     }
 
-    function forwardBatch(uint32 fromChainId, bytes calldata retrievalData) external {
+    function forwardBatch(uint32 fromChainId, bytes calldata retrievalData, bytes calldata sendData) external payable {
         uint256 batchHash = gateways[fromChainId].receiveHash(retrievalData); // this is chained hash
         uint32 toChainId = uint32(batchHash >> 224);
-        gateways[toChainId].sendHash(batchHash);
+        gateways[toChainId].sendHash{value: msg.value}(batchHash, sendData);
     }
 }
