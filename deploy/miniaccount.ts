@@ -14,7 +14,7 @@ if (!PRIVATE_KEY) throw "⛔️ Private key not detected! Add it to the .env fil
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
-  if(!(process.env.L2MANAGER || "")) throw "";
+  if(!(process.env.L2MANAGER || "")) return;
 
   console.log(`Running deploy script for the ZksyncManager contract`);
 

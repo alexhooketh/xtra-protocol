@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../../contracts/l1/interfaces/IL2Gateway.sol";
 import "@matterlabs/zksync-contracts/l1/contracts/zksync/interfaces/IZkSync.sol";
+import "@matterlabs/zksync-contracts/l1/contracts/zksync/Storage.sol";
 
 contract ZksyncGateway is IL2Gateway {
 
@@ -31,15 +32,21 @@ contract ZksyncGateway is IL2Gateway {
         (
             uint256 _l2BlockNumber,
             uint256 _index,
-            L2Message memory message,
+            uint16 txNumberInBlock,
+            bytes32 _hash,
             bytes32[] memory _proof
-        ) = abi.decode(retrievalData, (uint256, uint256, L2Message, bytes32[]));
+        ) = abi.decode(retrievalData, (uint256, uint256, uint16, bytes32, bytes32[]));
+        L2Message memory message = L2Message({
+            txNumberInBlock: txNumberInBlock,
+            sender: address(l2OpsManager),
+            data: abi.encodePacked(_hash)
+        });
         bool success = zkSync.proveL2MessageInclusion(_l2BlockNumber, _index, message, _proof);
         require(success, "empty");
-        return uint256(bytes32(message.data));
+        return uint256(_hash);
     }
 
-    function sendHash(uint256 batchHash, bytes memory sendData) external payable {
+    function sendHash(uint256 batchHash, bytes memory sendData) external {
         (
             uint256 _l2GasLimit,
             uint256 _l2GasPerPubdataByteLimit,

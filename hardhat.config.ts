@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
     version: "0.8.19",
   },
   paths: {
-    sources: "./samples"
+    sources: "./contracts"
   },
 };
 

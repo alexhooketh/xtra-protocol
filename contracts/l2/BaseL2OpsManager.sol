@@ -27,17 +27,16 @@ abstract contract BaseL2OpsManager is IL2OpsManager {
         totalBid[opHash.destinationChainId] += msg.value;
     }
 
-    function sendChainedHashToL1(ChainedHash memory chainedHash) internal virtual;
+    function sendChainedHashToL1(ChainedHash memory chainedHash) internal virtual returns (bytes memory);
 
-    function sendBatch(uint32 chainId) external returns (ChainedHash[] memory hashes) {
+    function sendBatch(uint32 chainId) external returns (bytes memory _msg) {
         ChainedHash memory batchHash;
         batchHash.destinationChainId = chainId;
         batchHash.userOpHash = uint224(uint256(keccak256(abi.encode(opRequests[chainId]))));
 
-        sendChainedHashToL1(batchHash);
+        _msg = sendChainedHashToL1(batchHash);
 
         payable(msg.sender).call{value: totalBid[chainId]}("");
-        hashes = opRequests[chainId];
         delete opRequests[chainId];
         delete totalBid[chainId];
     }

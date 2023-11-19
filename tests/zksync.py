@@ -68,14 +68,24 @@ print("ZksyncGateway address:", zksync_manager_contract.address)
 
 print("\nGood news - deploying works! Now testing functionality")
 
-zksync_manager_contract.functions.requestOp((l2web3.eth.chain_id, 1337)).transact({"from": address, "value": 10**18})
+tx_hash = zksync_manager_contract.functions.requestOp((l2web3.eth.chain_id, 1337)).transact({"from": address, "value": 10**18})
+print("Request op tx:", tx_hash.hex())
+
+time.sleep(5)
 
 print("Requested user operation on sender L2")
-
-print(zksync_manager_contract.functions.sendBatch(l2web3.eth.chain_id).call())
+total_bid = zksync_manager_contract.functions.totalBid(l2web3.eth.chain_id).call()
+print("Total bid:", total_bid)
+op_requests = []
+for i in range(2**256):
+    try:
+        op_requests.append(zksync_manager_contract.functions.opRequests(l2web3.eth.chain_id, i).call())
+    except:
+        break
+print("Op requests:", op_requests)
+batch_hash = zksync_manager_contract.functions.sendBatch(l2web3.eth.chain_id).call({"from": address})
+print("Batch data:", batch_hash.hex())
 tx_hash = zksync_manager_contract.functions.sendBatch(l2web3.eth.chain_id).transact({"from": address})
-
-block_number = l2web3.eth.block_number
 
 print("Packed user operation in batch and sent to L1")
 
@@ -95,8 +105,13 @@ while True:
         break
     time.sleep(1)
 
-print("Transaction was finalized")
+print("Transaction was finalized, proving inclusion...")
 
+# batch_hash = (l2web3.eth.chain_id << 224 | (2**224-1 & int.from_bytes(Web3.keccak(eth_abi.encode(["(uint32,uint224)[]"], [op_requests])), "little"))).to_bytes(32)
+batch_hh = Web3.keccak(batch_hash)
+print("Hash of batch hash (for proving):", batch_hh.hex())
+
+block_number = l2web3.eth.get_transaction(tx_hash).blockNumber
 response = requests.post("http://localhost:3050", json={
     "jsonrpc": "2.0",
     "id": 1,
@@ -104,8 +119,7 @@ response = requests.post("http://localhost:3050", json={
     "params": [
         block_number,
         zksync_manager_contract.address,
-        batch_hh.hex(),
-        0 # well
+        batch_hh.hex()
     ]
 }).json()
 
@@ -113,12 +127,18 @@ print(response)
 
 proof = [bytes.fromhex(x[2:]) for x in response["result"]["proof"]]
 
-retrieval_data = eth_abi.encode(["(uint256, uint256, (uint16, address, bytes), bytes32[])"], [(block_number, 0, (0, zksync_manager_contract.address, batch_hh), proof)])
-send_data = eth_abi.encode(["(uint256, uint256, address)"], [(10**18, 10**18, address)])
+retrieval_data = eth_abi.encode(["(uint256,uint256,uint16,bytes32,bytes32[])"], [(block_number, 0, 0, batch_hash, proof)])
+send_data = eth_abi.encode(["(uint256,uint256,address)"], [(10**6, 10**6, address)])
 
-l1router_contract.functions.forwardBatch(l2web3.eth.chain_id, retrieval_data, send_data).transact({"from": address})
+l1router_contract.functions.forwardBatch(l2web3.eth.chain_id, retrieval_data, send_data).transact({"from": address, "gas": 10000000})
 
 print("Forwarded batch hash from L1 to L2")
+
+time.sleep(5)
+
+zksync_manager_contract.functions.revealBatch(op_requests).transact({"from": address})
+
+print("Revealed batch contents")
 
 # i think that's all but i also have to test erc4337 somehow
 
@@ -133,10 +153,10 @@ miniaccount_contract = l2web3.eth.contract(address=data[-42:],
                                            abi=miniaccount_json["abi"],
                                            bytecode=miniaccount_json["bytecode"])
 
-is_valid = miniaccount_contract.functions.validateUserOp((), 1337, 0).call({"from": address})
+is_valid = miniaccount_contract.functions.validateUserOp((address,0,b"",b"",0,0,0,0,0,b"",b""), ((l2web3.eth.chain_id << 224) | 1337).to_bytes(32), 0).call({"from": address})
 
 print(is_valid)
-assert(is_valid == 0, "user op was not validated :(")
+assert is_valid == 0, "user op was not validated :("
 
 print("all tests done! user op hash was successfully transmitted to the destination L2")
 print("and now user can send their transaction through their ERC4337 miniaccount")

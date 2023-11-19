@@ -18,9 +18,10 @@ contract ZksyncManager is BaseL2OpsManager {
         return 100000; // TODO: make more efficient gas calculation
     }
 
-    function sendChainedHashToL1(ChainedHash memory chainedHash) internal override {
+    function sendChainedHashToL1(ChainedHash memory chainedHash) internal override returns (bytes memory _msg) {
         uint256 rawHash = serializeChainedHash(chainedHash);
-        L1_MESSENGER_CONTRACT.sendToL1(abi.encodePacked(rawHash));
+        _msg = abi.encodePacked(rawHash);
+        L1_MESSENGER_CONTRACT.sendToL1(_msg);
     }
 
     function _onlyFromL1Router() internal view override {

@@ -61,11 +61,7 @@ interface IL2OpsManager {
     // Fetches all userop requests where destination id is chainId,
     // hashes them into chained hash and sends the hash to L1 router.
     // Total bid of all chosen requests is then sent to the batch sender.
-    //
-    // This function must return all chosen op requests so operators can
-    // re-execute tx and get them. Operators need all hashes to reveal
-    // them on the destination L1.
-    function sendBatch(uint32 chainId) external returns (ChainedHash[] memory);
+    function sendBatch(uint32 chainId) external returns (bytes memory);
     // Receives the hash of the batch from L1.
     // It'll be stored in the contract storage until any operator
     // reveals the batch.

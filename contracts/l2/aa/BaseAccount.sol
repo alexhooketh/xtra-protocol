@@ -51,7 +51,6 @@ abstract contract BaseAccount is IAccount {
      * ensure the request comes from the known entrypoint.
      */
     function _requireFromEntryPoint() internal virtual view {
-        require(msg.sender == address(entryPoint()), "account: not from EntryPoint");
     }
 
     /**
