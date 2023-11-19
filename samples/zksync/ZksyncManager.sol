@@ -8,13 +8,13 @@ import "@matterlabs/zksync-contracts/l2/contracts/vendor/AddressAliasHelper.sol"
 
 contract ZksyncManager is BaseL2OpsManager {
 
-    address private immutable l1Router;
+    address private immutable l2Gateway;
 
-    constructor(address _l1Router) {
-        l1Router = _l1Router;
+    constructor(address _l2Gateway) {
+        l2Gateway = _l2Gateway;
     }
 
-    function calculateSendFee() public override returns (uint256) {
+    function calculateSendFee() public pure override returns (uint256) {
         return 100000; // TODO: make more efficient gas calculation
     }
 
@@ -23,7 +23,7 @@ contract ZksyncManager is BaseL2OpsManager {
         L1_MESSENGER_CONTRACT.sendToL1(abi.encodePacked(rawHash));
     }
 
-    function _onlyFromL1Router() internal override {
-        require(AddressAliasHelper.undoL1ToL2Alias(msg.sender) == l1Router, "ngmi");
+    function _onlyFromL1Router() internal view override {
+        require(AddressAliasHelper.undoL1ToL2Alias(msg.sender) == l2Gateway, "ngmi");
     }
 }

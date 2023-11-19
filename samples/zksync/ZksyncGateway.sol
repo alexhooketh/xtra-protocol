@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "/../../contracts/l1/interfaces/IL2Gateway.sol";
+import "../../contracts/l1/interfaces/IL2Gateway.sol";
 import "@matterlabs/zksync-contracts/l1/contracts/zksync/interfaces/IZkSync.sol";
 
 contract ZksyncGateway is IL2Gateway {
@@ -28,7 +28,12 @@ contract ZksyncGateway is IL2Gateway {
     }
 
     function receiveHash(bytes memory retrievalData) external returns (uint256) {
-        (uint256 _l2BlockNumber, uint256 _index, L2Message memory message, bytes32[] memory _proof) = abi.decodePacked(retrievalData);
+        (
+            uint256 _l2BlockNumber,
+            uint256 _index,
+            L2Message memory message,
+            bytes32[] memory _proof
+        ) = abi.decode(retrievalData, (uint256, uint256, L2Message, bytes32[]));
         bool success = zkSync.proveL2MessageInclusion(_l2BlockNumber, _index, message, _proof);
         require(success, "empty");
         return uint256(bytes32(message.data));
@@ -39,7 +44,7 @@ contract ZksyncGateway is IL2Gateway {
             uint256 _l2GasLimit,
             uint256 _l2GasPerPubdataByteLimit,
             address _refundRecipient
-        ) = abi.decodePacked(sendData);
+        ) = abi.decode(sendData, (uint256, uint256, address));
 
         bytes memory _calldata = abi.encodePacked(uint32(0xe3399cca), batchHash); // receiveBatchHash(uint256)
         bytes[] memory _factoryDeps;
