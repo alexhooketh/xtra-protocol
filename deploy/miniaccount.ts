@@ -14,6 +14,8 @@ if (!PRIVATE_KEY) throw "⛔️ Private key not detected! Add it to the .env fil
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
+  if(!(process.env.L2MANAGER || "")) throw "";
+
   console.log(`Running deploy script for the ZksyncManager contract`);
 
   // Initialize the wallet.
@@ -21,9 +23,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   // Create deployer object and load the artifact of the contract you want to deploy.
   const deployer = new Deployer(hre, wallet);
-  const artifact = await deployer.loadArtifact("ZksyncManager");
+  const artifact = await deployer.loadArtifact("MiniAccount");
 
-  const greeterContract = await deployer.deploy(artifact, [process.env.L2GATEWAY]);
+  const greeterContract = await deployer.deploy(artifact, [process.env.L2MANAGER, process.env.L2MANAGER]);
 
   // Show the contract info.
   const contractAddress = greeterContract.address;

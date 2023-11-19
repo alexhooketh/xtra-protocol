@@ -25,6 +25,7 @@ private_key = "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d411
 zksync_manager_json = json.loads(open("tests/artifacts/ZksyncManager.sol/ZksyncManager.json").read())
 zksync_gateway_json = json.loads(open("tests/artifacts/ZksyncGateway.sol/ZksyncGateway.json").read())
 l1router_json = json.loads(open("tests/artifacts/L1Router.json").read())
+miniaccount_json = json.loads(open("tests/artifacts/MiniAccount.json").read())
 
 print("Imported all L1 and L2 contracts data")
 
@@ -120,3 +121,22 @@ l1router_contract.functions.forwardBatch(l2web3.eth.chain_id, retrieval_data, se
 print("Forwarded batch hash from L1 to L2")
 
 # i think that's all but i also have to test erc4337 somehow
+
+env = open(".env").read()
+open(".env", "a").write(f"\nL2MANAGER={zksync_gateway_contract.address}\n")
+data = subprocess.check_output(["npx", "hardhat", "deploy-zksync", "--network", "dockerizedNode"]).decode().strip()
+open(".env", "w").write(env)
+
+print("Deployed mini account on destination L2")
+
+miniaccount_contract = l2web3.eth.contract(address=data[-42:],
+                                           abi=miniaccount_json["abi"],
+                                           bytecode=miniaccount_json["bytecode"])
+
+is_valid = miniaccount_contract.functions.validateUserOp((), 1337, 0).call({"from": address})
+
+print(is_valid)
+assert(is_valid == 0, "user op was not validated :(")
+
+print("all tests done! user op hash was successfully transmitted to the destination L2")
+print("and now user can send their transaction through their ERC4337 miniaccount")
